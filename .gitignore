@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# Resultados / artefactos de ejecución
+results_*.csv
+knn_heart_out_*.txt
+knn_heart_err_*.txt
+slurm-*.out
+
+# Editor
+.vscode/
+.idea/
+*.swp
