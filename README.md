@@ -31,10 +31,11 @@ listo para consumir es [`dataset/dataset.csv`](dataset/dataset.csv).
 - Implementación en **Python** con `scikit-learn` (`KNeighborsClassifier`,
   backend `threading`, algoritmo `brute`).
 - División **70% entrenamiento / 30% prueba**.
-- Barrido sobre tres ejes de escalabilidad:
-  - **Número de muestras (`N`)** — replicación de filas (`--mult-train`).
-  - **Número de atributos (`D`)** — features sintéticos (`--feat-mult`).
-  - **Número de procesos/hilos** — `--jobs` (1, 2, 4, 8, 16, 32).
+- Barrido sobre cuatro ejes de escalabilidad:
+  - **Muestras de entrenamiento (`N_train`)** — `--mult-train` ∈ {1, 4, 16, 64, 256, 1024}.
+  - **Queries de prueba (`N_test`)** — `--mult-test` ∈ {1, 16, 128}.
+  - **Número de atributos (`D`)** — `--feat-mult` ∈ {1, 2, 4, 8}, modo `mix`.
+  - **Número de procesos/hilos** — `--jobs` ∈ {1, 2, 4, 8, 16, 32}.
 - Repeticiones por configuración (`--reps`) para reducir ruido de medición.
 
 ## Mediciones y análisis
@@ -57,6 +58,8 @@ listo para consumir es [`dataset/dataset.csv`](dataset/dataset.csv).
 │   └── dataset.md              # Documentación del preprocesamiento
 ├── knn_heart_sklearn_scale.py  # Script de benchmark
 ├── knn_heart.sh                # Job SLURM con grid de barrido
+├── knn_heart_analisis.ipynb    # Notebook de visualizaciones y análisis
+├── results_knn_heart.csv       # Resultados del barrido (generado)
 └── README.md
 ```
 
@@ -67,7 +70,7 @@ listo para consumir es [`dataset/dataset.csv`](dataset/dataset.csv).
 ```bash
 python3 knn_heart_sklearn_scale.py \
     --k 5 --jobs 4 \
-    --mult-train 64 --mult-test 2 \
+    --mult-train 64 --mult-test 16 \
     --feat-mult 2 --feat-mode mix \
     --backend threading --algorithm brute \
     --reps 3 --output results_knn_heart.csv
@@ -80,7 +83,18 @@ sbatch knn_heart.sh
 ```
 
 El job barre el producto cartesiano de `THREADS_GRID × MULT_TRAIN_GRID ×
-FEAT_MULT_GRID` y acumula los tiempos en `results_knn_heart.csv`.
+MULT_TEST_GRID × FEAT_MULT_GRID` (≈432 configuraciones) y acumula los
+tiempos en `results_knn_heart.csv`. El walltime SLURM está fijado en
+`--time=04:00:00`.
+
+### Visualización de resultados
+
+Una vez generado `results_knn_heart.csv`, abrir
+[`knn_heart_analisis.ipynb`](knn_heart_analisis.ipynb) en Jupyter / VS Code
+y ejecutar todas las celdas. El notebook detecta automáticamente los ejes
+del barrido y produce las gráficas de tiempo, speedup, eficiencia,
+overhead, escalabilidad fuerte/débil y comparación con la complejidad
+teórica.
 
 ## Autores
 
