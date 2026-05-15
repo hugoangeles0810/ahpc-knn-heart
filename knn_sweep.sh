@@ -27,7 +27,7 @@ echo "---"
 # Grids
 OMP_GRID=(1 2 4 8 16 32)
 JOBS_GRID=(1 2 4 8 16 32)
-GRID_MT=(1 4 16 64 256)        # mult_train
+GRID_MT=(1 2 4 8 16 32)        # mult_train
 GRID_MTE=(1 16)                # mult_test
 GRID_FM=(1 2 4)                # feat_mult
 
