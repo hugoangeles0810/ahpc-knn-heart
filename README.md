@@ -46,7 +46,7 @@ de modo que las comparaciones son directas.
 
 ### Ejes del barrido
 
-- **Muestras de entrenamiento (`N_train`)** — `--mult-train` ∈ {1, 4, 16, 64, 256}.
+- **Muestras de entrenamiento (`N_train`)** — `--mult-train` ∈ {1, 4, 16, 64, 256, 1024} (n_train hasta 232 448).
 - **Queries de prueba (`N_test`)** — `--mult-test` ∈ {1, 16}.
 - **Número de atributos (`D`)** — `--feat-mult` ∈ {1, 2, 4}, modo `mix`.
 - **Threads OpenMP** — `OMP_NUM_THREADS` ∈ {1, 2, 4, 8, 16, 32} (sklearn-brute).
@@ -55,8 +55,8 @@ de modo que las comparaciones son directas.
 - `k = 5` fijo, 3 repeticiones por configuración (`--reps 3`).
 
 Cross-product completo para sklearn-brute (6 × 6 = 36 puntos paralelos)
-más sweeps de joblib en ambos backends para manual-brute → **1 440 runs**
-totales sobre 30 configuraciones de tamaño.
+más sweeps de joblib en ambos backends para manual-brute → **1 728 runs**
+totales sobre 36 configuraciones de tamaño.
 
 ## Mediciones y análisis
 
@@ -80,6 +80,7 @@ totales sobre 30 configuraciones de tamaño.
 │   └── dataset.md      # Documentación del preprocesamiento
 ├── knn_runner.py       # CLI unificado (sklearn + manual_brute)
 ├── knn_sweep.sh        # Job SLURM con el grid de barrido
+├── knn_analisis.ipynb  # Notebook de análisis (strong/weak/overhead)
 ├── results_knn.csv     # Resultados del barrido (generado por knn_sweep.sh)
 └── README.md
 ```
@@ -115,9 +116,9 @@ sbatch knn_sweep.sh
 ```
 
 El job recorre los tres bloques de paralelismo (sklearn-brute cross-product
-OMP × jobs; manual-brute threading; manual-brute loky) sobre las 30
+OMP × jobs; manual-brute threading; manual-brute loky) sobre las 36
 configuraciones de tamaño, escribiendo todo a `results_knn.csv`. Walltime
-fijado en `--time=02:30:00`; estimación realista ≈ 75 min.
+fijado en `--time=02:30:00`.
 
 ### Schema del CSV
 
@@ -139,15 +140,25 @@ slurm_job_id, slurm_array_task_id
 
 ### Análisis
 
-Una vez generado `results_knn.csv`, el análisis se hace filtrando por
-`implementation` y la palanca de paralelismo correspondiente:
+El análisis completo está en [`knn_analisis.ipynb`](knn_analisis.ipynb)
+(strong scaling, weak scaling, overhead y heatmap OMP × n_jobs). Resumen
+de resultados sobre el caso BIG (`n_train = 232 448`, `d = 88`,
+`n_test = 1216`):
+
+| rama | palanca | T(1) | T(óptimo) | p\* | speedup pico |
+|---|---|---|---|---|---|
+| `sklearn-OMP`    | `OMP_NUM_THREADS` | 1.55 s   | 0.17 s  | 32 | **9.3×** |
+| `sklearn-jobs`   | `n_jobs`          | 1.55 s   | 1.52 s  | 2  | 1.0× (no-op) |
+| `manual-thread`  | `n_jobs` (thr.)   | 102.9 s  | 34.4 s  | 8  | 3.0×       |
+| `manual-loky`    | `n_jobs` (loky)   | 103.1 s  | 38.0 s  | 8  | 2.7×       |
+
+Cómo filtrar el CSV por rama:
 
 - `implementation == "sklearn-brute" & n_jobs == 1`, variando
-  `omp_num_threads` → strong scaling vía OpenMP (esperado: speedup hasta
-  ~10× a OMP=16).
+  `omp_num_threads` → strong scaling vía OpenMP.
 - `implementation == "sklearn-brute" & omp_num_threads == 1`, variando
   `n_jobs` → demuestra que `n_jobs` es no-op para el camino
-  brute+euclidean (esperado: speedup ≈ 1).
+  brute+euclidean (speedup ≈ 1, confirmado).
 - `implementation == "sklearn-brute"` completo → heatmap 6×6 OMP × n_jobs.
 - `implementation == "manual-brute"` por backend (threading vs loky)
   → comparación de overhead de joblib.

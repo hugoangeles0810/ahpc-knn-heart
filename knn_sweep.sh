@@ -32,10 +32,10 @@ GRID_MTE=(1 16)                # mult_test
 GRID_FM=(1 2 4)                # feat_mult
 
 # Total esperado:
-#   Bloque A: |OMP|*|JOBS|*|MT|*|MTE|*|FM| = 6*6*5*2*3 = 1080
-#   Bloque B: |JOBS|*|MT|*|MTE|*|FM|       = 6*5*2*3   = 180
-#   Bloque C: idem                                     = 180
-#   Total = 1440
+#   Bloque A: |OMP|*|JOBS|*|MT|*|MTE|*|FM| = 6*6*6*2*3 = 1296
+#   Bloque B: |JOBS|*|MT|*|MTE|*|FM|       = 6*6*2*3   = 216
+#   Bloque C: idem                                     = 216
+#   Total = 1728
 total=$(( ${#OMP_GRID[@]}*${#JOBS_GRID[@]}*${#GRID_MT[@]}*${#GRID_MTE[@]}*${#GRID_FM[@]} \
         + 2*${#JOBS_GRID[@]}*${#GRID_MT[@]}*${#GRID_MTE[@]}*${#GRID_FM[@]} ))
 echo "Total runs esperados: ${total}"
